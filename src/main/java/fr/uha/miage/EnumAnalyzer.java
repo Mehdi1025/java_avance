@@ -21,4 +21,4 @@ public class EnumAnalyzer {
     public Class<?> getEnumClass() {
         return enumClass;
     }
-}git add .
+}
