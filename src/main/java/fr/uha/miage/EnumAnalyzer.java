@@ -1,24 +1,55 @@
 package fr.uha.miage;
 
+import java.lang.reflect.Modifier;
+import java.util.Arrays;
+
 public class EnumAnalyzer {
     
-    private final Class<?> enumClass; // On stocke la cible à analyser
+    private final Class<?> enumClass;
+    private TypeInfo typeInfo; // On va stocker les résultats ici
 
-    // Le constructeur est notre "videur"
+    // Un "record" (nouveauté récente de Java) est parfait pour stocker des données immuables
+    public record TypeInfo(
+        String nomSimple, 
+        String nomQualifie, 
+        String paquetage, 
+        String modificateurs, 
+        String superClasse,
+        String interfaces
+    ) {}
+
     public EnumAnalyzer(Class<?> clazz) {
         if (clazz == null) {
             throw new IllegalArgumentException("La classe à analyser ne peut pas être null.");
         }
-        
-        // Introspection : On demande à Java si la classe est bien une énumération
         if (!clazz.isEnum()) {
             throw new NotAnEnumException("Le type fourni (" + clazz.getName() + ") n'est pas une énumération.");
         }
-        
         this.enumClass = clazz;
     }
 
-    public Class<?> getEnumClass() {
-        return enumClass;
+    // L'étape 1 du projet : L'analyse du Type
+    public void analyzeType() {
+        // L'introspection en action !
+        String nom = enumClass.getSimpleName();
+        String nomComplet = enumClass.getName();
+        String paquetage = enumClass.getPackageName();
+        
+        // Modifier.toString permet de traduire le code interne de Java (ex: 17) en mots ("public final")
+        String modifs = Modifier.toString(enumClass.getModifiers());
+        
+        // Une énumération hérite toujours de java.lang.Enum
+        String superCl = enumClass.getSuperclass() != null ? enumClass.getSuperclass().getName() : "Aucune";
+        
+        // On récupère les interfaces sous forme de tableau, qu'on transforme en chaîne de caractères
+        String interfs = Arrays.toString(enumClass.getInterfaces());
+
+        // On sauvegarde tout ça dans notre record
+        this.typeInfo = new TypeInfo(nom, nomComplet, paquetage, modifs, superCl, interfs);
+    }
+
+    // Pour que nos tests (ou le rapport final) puissent lire les résultats
+    public TypeInfo getTypeInfo() {
+        return typeInfo;
     }
 }
