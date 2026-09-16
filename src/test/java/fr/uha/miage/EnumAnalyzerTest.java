@@ -74,4 +74,51 @@ class EnumAnalyzerTest {
         assertEquals("java.lang.Enum", info.superClasse());
         assertEquals("fr.uha.miage.EnumAnalyzerTest$FaussePizza", info.nomQualifie());
     }
+    // Une nouvelle énumération avec un attribut personnalisé ("codeHexa")
+enum FausseCouleur {
+    ROUGE("#FF0000"),
+    BLEU("#0000FF");
+
+    // Voici notre attribut métier
+    private final String codeHexa;
+
+    FausseCouleur(String codeHexa) {
+        this.codeHexa = codeHexa;
+    }
+}
+
+@Test
+void testAnalyzeFields() {
+    EnumAnalyzer analyzer = new EnumAnalyzer(FausseCouleur.class);
+    analyzer.analyzeFields();
+    List<EnumAnalyzer.FieldInfo> attributs = analyzer.getFieldsInfo();
+    
+    assertFalse(attributs.isEmpty(), "Il doit y avoir des attributs détectés");
+    
+    // On va utiliser des variables pour vérifier qu'on trouve bien tous nos types d'attributs
+    boolean rougeTrouve = false;
+    boolean codeHexaTrouve = false;
+    boolean valuesTrouve = false; // Le fameux attribut caché du compilateur
+
+    for (EnumAnalyzer.FieldInfo field : attributs) {
+        if (field.nom().equals("ROUGE")) {
+            assertTrue(field.estConstanteEnum(), "ROUGE doit être détecté comme une constante d'énumération");
+            assertTrue(field.modificateurs().contains("public"), "Une constante est publique");
+            assertTrue(field.modificateurs().contains("static"), "Une constante est statique");
+            rougeTrouve = true;
+        } 
+        else if (field.nom().equals("codeHexa")) {
+            assertFalse(field.estConstanteEnum(), "codeHexa est un attribut normal, pas une constante");
+            assertTrue(field.modificateurs().contains("private"), "codeHexa doit être détecté comme privé");
+            codeHexaTrouve = true;
+        } 
+        else if (field.estSynthetique() || field.nom().equals("$VALUES")) {
+            valuesTrouve = true;
+        }
+    }
+    
+    assertTrue(rougeTrouve, "L'attribut ROUGE n'a pas été trouvé");
+    assertTrue(codeHexaTrouve, "L'attribut métier codeHexa n'a pas été trouvé");
+    assertTrue(valuesTrouve, "L'attribut technique (synthétique) du compilateur n'a pas été détecté");
+}
 }

@@ -4,11 +4,23 @@ import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.List;
 import java.util.ArrayList;
+import java.lang.reflect.Field;
 
 public class EnumAnalyzer {
     
     private final Class<?> enumClass;
     private TypeInfo typeInfo; 
+    // La structure pour un attribut
+public record FieldInfo(
+    String nom, 
+    String type, 
+    String modificateurs, 
+    boolean estConstanteEnum, 
+    boolean estSynthetique
+) {}
+
+// La liste de tous les attributs trouvés
+private List<FieldInfo> fieldsInfo = new ArrayList<>();
     // La structure pour stocker les infos d'une seule constante
 public record ConstantInfo(
     String nom, 
@@ -91,5 +103,27 @@ private List<ConstantInfo> constantsInfo = new ArrayList<>();// On va stocker le
 // Le getter pour pouvoir lire les résultats (utile pour les tests et le rapport)
 public List<ConstantInfo> getConstantsInfo() {
     return constantsInfo;
+}
+public void analyzeFields() {
+    // On récupère tous les attributs de la classe
+    Field[] champs = enumClass.getDeclaredFields();
+    
+    for (Field champ : champs) {
+        String nom = champ.getName();
+        String type = champ.getType().getSimpleName();
+        String modifs = Modifier.toString(champ.getModifiers());
+        
+        // Est-ce une de nos valeurs d'énumération (LUNDI, MARDI...) ?
+        boolean estConstante = champ.isEnumConstant();
+        
+        // Est-ce un attribut technique généré secrètement par le compilateur ?
+        boolean estSynth = champ.isSynthetic();
+        
+        fieldsInfo.add(new FieldInfo(nom, type, modifs, estConstante, estSynth));
+    }
+}
+
+public List<FieldInfo> getFieldsInfo() {
+    return fieldsInfo;
 }
 }
